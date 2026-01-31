@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 import os
 
-app = FastAPI(title="Gemini Chat API")
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,30 +16,19 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
 
-@app.on_event("startup")
-def startup_event():
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not found")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-    genai.configure(api_key=api_key)
-
-    global model
-    model = genai.GenerativeModel("gemini-pro")  # ✅ FIXED MODEL
-
-@app.get("/")
-def health():
-    return {"status": "Gemini API running"}
-
-
+@app.get("/models")
+def list_models():
+    models = genai.list_models()
+    return [m.name for m in models]
 
 @app.post("/chat")
 def chat(data: ChatRequest):
     try:
-        response = model.generate_content(data.message)
+        # Suppose we pick a valid model below
+        chosen_model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        response = chosen_model.generate_content(data.message)
         return {"reply": response.text}
     except Exception as e:
-        return {
-            "reply": "Sorry, something went wrong.",
-            "error": str(e)
-        }
+        return {"reply": "Error", "error": str(e)}
