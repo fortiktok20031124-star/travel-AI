@@ -31,7 +31,15 @@ def startup_event():
 def health():
     return {"status": "Gemini API running"}
 
+
+
 @app.post("/chat")
 def chat(data: ChatRequest):
-    response = model.generate_content(data.message)
-    return {"reply": response.text}
+    try:
+        response = model.generate_content(data.message)
+        return {"reply": response.text}
+    except Exception as e:
+        return {
+            "reply": "Sorry, something went wrong.",
+            "error": str(e)
+        }
