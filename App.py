@@ -3,23 +3,18 @@ from flask_cors import CORS
 import google.generativeai as genai
 import os
 
-# ----------------------------
-# CONFIG
-# ----------------------------
-genai.configure(api_key=os.getenv("AIzaSyBPs15dhNtHHc1uxOty9_Jln7iAIsIurY4"))
+# Configure Gemini
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 model = genai.GenerativeModel("gemini-pro")
 chat = model.start_chat(history=[])
 
 app = Flask(__name__)
-CORS(app)  # allow frontend requests
+CORS(app)
 
-# ----------------------------
-# ROUTES
-# ----------------------------
 @app.route("/chat", methods=["POST"])
 def chat_with_ai():
-    data = request.json
+    data = request.get_json()
     user_message = data.get("message")
 
     if not user_message:
@@ -28,9 +23,6 @@ def chat_with_ai():
     response = chat.send_message(user_message)
     return jsonify({"reply": response.text})
 
-
-# ----------------------------
-# RUN SERVER
-# ----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
