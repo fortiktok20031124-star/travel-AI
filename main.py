@@ -3,8 +3,10 @@ import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 
-GEMINI_API_KEY = os.getenv("AIzaSyBFjbtrTgI-EjTroTkKb8hokDUpxJErntM")
+
+client = genai.Client(api_key=os.getenv("AIzaSyBFjbtrTgI-EjTroTkKb8hokDUpxJErntM"))
 
 app = FastAPI()
 
