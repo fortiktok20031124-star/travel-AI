@@ -3,45 +3,35 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+app = FastAPI(title="Gemini Chat API")
 
-# Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-# FastAPI app
-app = FastAPI(title="Gemini Chatbot API")
-
-# Allow frontend access (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # restrict later in production
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Request body schema
 class ChatRequest(BaseModel):
     message: str
 
-# Response schema
-class ChatResponse(BaseModel):
-    reply: str
+@app.on_event("startup")
+def startup_event():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not found")
 
-@app.post("/chat", response_model=ChatResponse)
-def chat_endpoint(data: ChatRequest):
-    try:
-        response = model.generate_content(data.message)
-        return ChatResponse(reply=response.text)
-    except Exception as e:
-        return ChatResponse(reply=f"Error: {str(e)}")
+    genai.configure(api_key=api_key)
 
-# Health check
+    global model
+    model = genai.GenerativeModel("gemini-pro")  # ✅ FIXED MODEL
+
 @app.get("/")
-def root():
-    return {"status": "Gemini API is running"}
+def health():
+    return {"status": "Gemini API running"}
+
+@app.post("/chat")
+def chat(data: ChatRequest):
+    response = model.generate_content(data.message)
+    return {"reply": response.text}
