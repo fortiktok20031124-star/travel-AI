@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import google.generativeai as genai
 import os
+from google import genai
 
-app = FastAPI(title="Gemini Chatbot API")
+app = FastAPI(title="Gemini Chatbot API (New Client)")
 
-# Allow all origins (adjust for production)
+# Allow all origins for testing
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,24 +14,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Request body model
 class ChatRequest(BaseModel):
     message: str
 
-model = None
-
-@app.on_event("startup")
-def startup_event():
-    global model
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print("ERROR: GEMINI_API_KEY missing")
-        return
-
-    genai.configure(api_key=api_key)
-
-    # ✅ Use a valid model from your list
-    model = genai.GenerativeModel("models/gemini-flash-latest")
-    print("Gemini model initialized successfully")
+# Initialize Gemini client
+client = genai.Client()
 
 @app.get("/")
 def health():
@@ -39,16 +27,21 @@ def health():
 
 @app.post("/chat")
 def chat(data: ChatRequest):
-    if model is None:
-        return {"reply": "AI model not ready"}
-
     try:
-        response = model.generate_content(data.message)
+        # Use a valid current model from your list
+        response = client.models.generate_content(
+            model="models/gemini-3-flash-preview",
+            contents=data.message
+        )
         return {"reply": response.text}
     except Exception as e:
-        print("Gemini error:", e)
-        return {"reply": "Sorry, something went wrong.", "error": str(e)}
+        return {
+            "reply": "Sorry, something went wrong.",
+            "error": str(e)
+        }
 
 @app.get("/models")
 def list_models():
-    return [m.name for m in genai.list_models()]
+    # List available models
+    models = client.models.list()
+    return [m.name for m in models]
