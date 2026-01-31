@@ -4,7 +4,7 @@ import google.generativeai as genai
 import os
 
 # Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("AIzaSyBPs15dhNtHHc1uxOty9_Jln7iAIsIurY4"))
 
 model = genai.GenerativeModel("gemini-pro")
 chat = model.start_chat(history=[])
@@ -26,3 +26,4 @@ def chat_with_ai():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
