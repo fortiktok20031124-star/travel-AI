@@ -1,7 +1,4 @@
-flask
-flask-cors
-google-generativeai
 fastapi
 uvicorn
-requests
-pydantic
+python-dotenv
+google-generativeai
