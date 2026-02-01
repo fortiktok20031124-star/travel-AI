@@ -1,36 +1,72 @@
 from fastapi import FastAPI
-import google.generativeai as genai
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from google import genai
 
-genai.configure(api_key="YOUR_API_KEY")
+app = FastAPI(title="Gemini Travel Agent API")
 
-app = FastAPI()
+# Allow all origins for testing
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class ChatRequest(BaseModel):
+    message: str
+
+# Initialize Gemini client
+client = genai.Client()
+
+# 🔒 Travel Agent System Prompt (Backend controlled)
+TRAVEL_AGENT_PROMPT = """
+You are a professional travel agent AI.
+
+Your role:
+- Help users choose travel destinations
+- Ask clarifying questions if needed
+- Consider budget, vibe, safety, and crowd level
+- Give realistic and safe recommendations
+- Explain WHY you recommend a place
+
+Rules:
+- Do not act as a general chatbot
+- Do not answer unrelated questions
+- Be friendly and helpful
+"""
+
+@app.get("/")
+def health():
+    return {"status": "ok"}
 
 @app.post("/chat")
-async def chat(user_message: str):
+def chat(data: ChatRequest):
+    try:
+        # 🧠 Combine system prompt + user message
+        full_prompt = f"""
+{TRAVEL_AGENT_PROMPT}
 
-    # Step 1: Extract preferences
-    extract_prompt = f"""
-    Extract travel preferences and return JSON only.
+User request:
+{data.message}
 
-    Message: {user_message}
-    """
+Respond as a travel agent.
+"""
 
-    model = genai.GenerativeModel("gemini-pro")
-    prefs = model.generate_content(extract_prompt).text
+        response = client.models.generate_content(
+            model="models/gemini-3-flash-preview",
+            contents=full_prompt
+        )
 
-    # Step 2: Recommend
-    recommend_prompt = f"""
-    You are a travel agent.
+        return {"reply": response.text}
 
-    User preferences:
-    {prefs}
+    except Exception as e:
+        return {
+            "reply": "Sorry, something went wrong.",
+            "error": str(e)
+        }
 
-    Available destinations:
-    {DESTINATION_DATA}
-
-    Recommend top 3 destinations with reasons.
-    """
-
-    response = model.generate_content(recommend_prompt)
-
-    return {"reply": response.text}
+@app.get("/models")
+def list_models():
+    models = client.models.list()
+    return [m.name for m in models]
