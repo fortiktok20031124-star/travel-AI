@@ -32,19 +32,17 @@ Schema:
 {
   "trip": [
     {
-      "day": number,
-      "city": string,
-      "places": [
-        {
-          "name": string,
-          "type": string,
-          "imageQuery": string,
-          "description": string
-        }
-      ]
+      "placeName": "string",
+      "description": "string",
+      "day": 1,
+      "city": "string",
+      "type": "string",
+      "imageQuery": "string",
+      "costLKR": 2500
     }
   ]
 }
+
 """
 
 # 💬 NORMAL CHAT PROMPT
@@ -64,7 +62,8 @@ def is_trip_planning(message: str) -> bool:
         "day trip",
         "days trip",
         "visit places",
-        "tour plan"
+        "tour plan",
+        "trip to"
     ]
     msg = message.lower()
     return any(k in msg for k in keywords)
