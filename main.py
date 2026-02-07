@@ -38,7 +38,7 @@ Schema:
       "city": "string",
       "type": "string",
       "imageQuery": "string",
-      "costLKR": 2500
+      "costLKR": int
     }
   ]
 }
